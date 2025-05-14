@@ -1,0 +1,31 @@
+Some insights from Crutchfield, Ditto, and Sinha’s introduction to the Focus Issue on “Intrinsic and Designed Computation”:
+
+1. **Computation Beyond Transistors**
+   The paper argues that useful information processing isn’t confined to silicon-based, Boolean logic circuits—nonlinear dynamical systems, including chaotic maps, intrinsically store, transform, and transmit information in richer ways than standard digital gates
+
+2. **Bridging Foundational Disciplines**
+   Understanding computation in dynamical systems unites dynamical‐systems theory, probability, mathematical logic, communication theory, and theoretical computer science—disciplines that originally grew from the same conceptual roots
+
+3. **Challenging “Digital Hegemony”**
+   Our entrenched belief that only deterministic, von-Neumann architectures count as “real” computers is questioned. The authors call this the “digital hegemony” and invite us to explore alternative substrates
+
+4. **Eclectic Range of Approaches**
+   The Focus Issue spans work from the most abstract—where even deciding if a system is chaotic can be as hard as solving major mathematical problems—to concrete implementations of “chaotic logic” in software and hardware 
+
+5. **Harnessing Chaos as Logic (“Chaogates”)**
+   Several contributions explore how sensitive dependence on initial conditions can be engineered into logic primitives, turning chaos itself into a computational resource 
+
+6. **Reservoir Computing Paradigms**
+   Recurrent dynamical systems—whether neural, photonic, or chemical—can serve as “reservoirs” that map inputs into high-dimensional state spaces, where simple linear readouts extract complex temporal patterns 
+
+7. **Designed Self-Organizing Materials**
+   The issue highlights efforts to embed computation within the material’s own physics—creating meta-materials whose self-organization and phase transitions perform information processing 
+
+8. **Energy Efficiency and Robustness**
+   Intrinsic computation promises hardware that is inherently parallel, noise-tolerant, and far more energy-efficient than ever-shrinking CMOS transistors, potentially postponing or sidestepping the end of Moore’s Law ([ResearchGate][2]).
+
+9. **Reframing “What Is Computation?”**
+   By recognizing pattern formation, adaptation, and information flows in nature as computational acts, the authors push us to a broader, more philosophical understanding of computation itself
+
+10. **Ubiquity of Natural Information Processing**
+    Perhaps the most lasting legacy will be an appreciation that computation pervades the natural world—from chemical oscillations to ecological networks—and that harnessing these processes could revolutionize how we build computers 
