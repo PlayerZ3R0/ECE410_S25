@@ -1,0 +1,13 @@
+Mode 0 (CPOL=0, CPHA=0), 8-bit transfers, one chip-select (active low):
+
+    ┌───────────┐                  ┌─────────────────┐
+MOSI│→ data out │                  │                 │
+    │           │    ┌───┐    ┌───┐│  Verilog SPI    │
+SCLK│←─clock────┼────┤   ├────┤   ├┤  slave module   ├─ MISO
+    │           │    └───┘    └───┘│                 │
+ CS │←─chip-sel──┴─────────────────┴─────────────────┘
+
+
+CS low → transaction starts
+On each rising edge of SCLK, the slave samples MOSI; on each falling edge, the slave drives MISO.
+After 8 pulses, one byte is shifted in/out.

@@ -1,0 +1,6 @@
+project/
+├── Makefile
+├── spi_s.v
+└── tests/
+    ├── test_spi.py
+    └── spi_master.py
