@@ -1,0 +1,24 @@
+--- Starting Training for XOR Gate ---
+Epoch 1000/10000, Loss: 0.012614
+Epoch 2000/10000, Loss: 0.002548
+Epoch 3000/10000, Loss: 0.001346
+Epoch 4000/10000, Loss: 0.000902
+Epoch 5000/10000, Loss: 0.000675
+Epoch 6000/10000, Loss: 0.000537
+Epoch 7000/10000, Loss: 0.000446
+Epoch 8000/10000, Loss: 0.000380
+Epoch 9000/10000, Loss: 0.000331
+Epoch 10000/10000, Loss: 0.000293
+--- Training Complete ---
+
+--- XOR Test Results ---
+Input: [0 0] -> Prediction: 0.0189 (Expected: 0)
+Input: [0 1] -> Prediction: 0.9837 (Expected: 1)
+Input: [1 0] -> Prediction: 0.9837 (Expected: 1)
+Input: [1 1] -> Prediction: 0.0169 (Expected: 0)
+
+-------------------------------------------------------------------------------------
+The Loss (a measure of error) steadily decreases, showing the network is learning.
+The final predictions are very close to the expected outputs: values near 0 for an expected output of 0, and values near 1 for an expected output of 1.
+
+This successfully solves the challenge and demonstrates the fundamental principle behind why deep neural networks are so powerful

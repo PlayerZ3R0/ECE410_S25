@@ -1,0 +1,11 @@
+How it Works: The Magic of the Hidden Layer
+
+Architecture: We will build a 2-2-1 network:
+
+Input Layer: 2 neurons, one for each input (x1, x2).
+Hidden Layer: 2 neurons. This is the crucial part. These neurons can learn to represent intermediate, more abstract features of the data. For XOR, one hidden neuron might learn to detect (x1 OR x2), while the other learns to detect (x1 NAND x2).
+Output Layer: 1 neuron. This final neuron takes the outputs from the hidden layer and learns to combine them. In our XOR example, it might learn to perform an AND operation on the outputs of the hidden neurons ((x1 OR x2) AND (x1 NAND x2)), which is equivalent to XOR.
+Backpropagation: This is the learning algorithm. It works in two phases:
+
+Forward Pass: The inputs are fed through the network to generate a prediction.
+Backward Pass: The error between the prediction and the true output is calculated. This error is then propagated backward through the network, from the output layer to the hidden layer. As the error travels backward, it tells each neuron how much it contributed to the overall error. The neuron's weights are then adjusted accordingly to reduce this error in the future.
