@@ -1,0 +1,7 @@
+A Note on the "Perceptron Learning Rule"
+The request mentions using the "perceptron learning rule" with a sigmoid function. It's important to clarify a key distinction:
+
+The classic Perceptron Learning Rule was designed for a neuron with a step function as its activator. It updates weights based on a simple error term.
+A neuron with a smooth, differentiable activation function like the sigmoid function is typically trained using gradient descent. This method uses the derivative (gradient) of the activation function to make more nuanced weight adjustments.
+For this solution, we will follow the spirit of the challenge by implementing a neuron with a sigmoid function and training it with the appropriate method: gradient descent. This is the foundational technique for modern neural networks.
+

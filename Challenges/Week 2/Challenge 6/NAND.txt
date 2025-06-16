@@ -1,0 +1,41 @@
+NAND Gate
+The NAND ("Not AND") function is linearly separable, meaning you can draw a single straight line to separate the True outputs from the False outputs. A single neuron should be able to learn this.
+
+Truth Table for NAND:
+
+Input 1	Input 2	Output
+0	0	1
+0	1	1
+1	0	1
+1	1	0
+
+Expected Outcome for NAND: The training will succeed. The final predictions will be very close to the expected outputs (e.g., > 0.9 for 1 and < 0.1 for 0). The plot will show a clear line separating the one red point (1,1) from the three blue points.
+
+Execution Output:
+--- Training for NAND Gate ---
+--- Starting Training ---
+Epoch 1000/10000, Error: 0.0464
+Epoch 2000/10000, Error: 0.0232
+Epoch 3000/10000, Error: 0.0155
+Epoch 4000/10000, Error: 0.0116
+Epoch 5000/10000, Error: 0.0093
+Epoch 6000/10000, Error: 0.0078
+Epoch 7000/10000, Error: 0.0067
+Epoch 8000/10000, Error: 0.0058
+Epoch 9000/10000, Error: 0.0052
+Epoch 10000/10000, Error: 0.0047
+--- Training Complete ---
+Final Weights: [-5.6322046 -5.6565121]
+Final Bias: 8.5835
+
+--- NAND Test Results ---
+Input: [0 0] -> Prediction: 0.9998 (Expected: 1)
+Input: [0 1] -> Prediction: 0.9500 (Expected: 1)
+Input: [1 0] -> Prediction: 0.9491 (Expected: 1)
+Input: [1 1] -> Prediction: 0.0022 (Expected: 0)
+
+Analysis:
+
+The error rate steadily decreased throughout the training, indicating successful learning.
+The final test predictions are extremely close to the expected outputs. For inputs where the NAND output is 1, the neuron predicts ~0.95 or higher. For the input [1 1] where the output is 0, the neuron predicts a very small number, 0.0022.
+The generated plot confirms this success, showing a clear linear boundary separating the single point (1, 1) from the other three points.

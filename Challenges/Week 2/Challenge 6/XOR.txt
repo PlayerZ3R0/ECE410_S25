@@ -1,0 +1,41 @@
+XOR Gate
+The XOR ("Exclusive OR") function is the classic example of a non-linearly separable problem. You cannot draw a single straight line to separate the True and False outputs. A single neuron cannot solve this problem.
+
+Truth Table for XOR:
+
+Input 1	Input 2	Output
+0	0	0
+0	1	1
+1	0	1
+1	1	0
+
+Expected Outcome for XOR: The training will fail. The error will remain high, and the final predictions will all hover around 0.5. The neuron cannot find weights that satisfy the XOR logic. The plot will show a line that fails to correctly classify the points; it's impossible for it to do so.
+
+Execution Output:
+--- Training for XOR Gate ---
+--- Starting Training ---
+Epoch 1000/10000, Error: 1.9965
+Epoch 2000/10000, Error: 1.9972
+Epoch 3000/10000, Error: 1.9975
+Epoch 4000/10000, Error: 1.9977
+Epoch 5000/10000, Error: 1.9979
+Epoch 6000/10000, Error: 1.9980
+Epoch 7000/10000, Error: 1.9981
+Epoch 8000/10000, Error: 1.9982
+Epoch 9000/10000, Error: 1.9982
+Epoch 10000/10000, Error: 1.9983
+--- Training Complete ---
+Final Weights: [-0.07077978  0.03814467]
+Final Bias: -0.0163
+
+--- XOR Test Results ---
+Input: [0 0] -> Prediction: 0.4959 (Expected: 0)
+Input: [0 1] -> Prediction: 0.5054 (Expected: 1)
+Input: [1 0] -> Prediction: 0.4816 (Expected: 1)
+Input: [1 1] -> Prediction: 0.4920 (Expected: 0)
+
+Analysis:
+
+The error rate remained stagnant at approximately 2.0 throughout the entire training process. An error of 2.0 in this case means the neuron is essentially predicting 0.5 for all four inputs, resulting in an error of 0.5 for each (0.5 * 4 = 2.0).
+The final predictions confirm this. All outputs are clustered around 0.5, indicating the neuron is completely uncertain and has failed to learn the underlying pattern.
+The generated plot clearly visualizes the problem. It is impossible to draw one straight line to separate the two blue points ((0, 1), (1, 0)) from the two red points ((0, 0), (1, 1)).

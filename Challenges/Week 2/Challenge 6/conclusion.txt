@@ -1,0 +1,10 @@
+This exercise demonstrates a fundamental concept in neural networks:
+
+Success with NAND: A single neuron acts as a linear classifier. It can successfully learn and model any linearly separable function, like AND, OR, and NAND.
+
+Failure with XOR: A single neuron fundamentally cannot solve non-linearly separable problems like XOR. No matter how long you train it, it can never find a single line to correctly partition the data.
+
+This limitation is precisely why deep neural networks with multiple layers were invented. By combining neurons into layers, a network can learn complex, non-linear decision boundaries and solve problems like XOR and much more.
+
+After execution outcomes:
+The practical execution perfectly matches the theoretical expectations. A single neuron can solve linearly separable problems but fails at non-linearly separable ones, demonstrating its fundamental limitation and the necessity for multi-layer networks.
