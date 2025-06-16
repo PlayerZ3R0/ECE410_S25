@@ -7,6 +7,7 @@ import time
 # -------------------------------------------------------------------------
 # Part 1: Hardware Design (PyRTL Accelerator)
 # This is the same scalable 10x10 accelerator design from before.
+# UPDATED: Re-architected with a pipelined FSM to handle memory port limits.
 # -------------------------------------------------------------------------
 
 def fixed_point_const(val, frac_bits=8):
@@ -19,6 +20,7 @@ def create_frozenlake_accelerator(
     state_bits = math.ceil(math.log2(states))
     action_bits = math.ceil(math.log2(actions))
     
+    # --- I/O Wires ---
     start_episode = pyrtl.Input(1, 'start_episode')
     current_state_in = pyrtl.Input(state_bits, 'current_state_in')
     reward_in = pyrtl.Input(q_bits, 'reward_in')
@@ -26,83 +28,149 @@ def create_frozenlake_accelerator(
     done_in = pyrtl.Input(1, 'done_in')
 
     action_out = pyrtl.Output(action_bits, 'action_out')
+    episode_done = pyrtl.Output(1, 'episode_done')
     
-    q_table = pyrtl.MemBlock(bitwidth=q_bits, addrwidth=state_bits + action_bits, name='q_table')
+    # --- Internal Components & Wires ---
+    # A single memory block, representing a realistic single-port RAM
+    q_table = pyrtl.MemBlock(bitwidth=q_bits, addrwidth=state_bits + action_bits, name='q_table', asynchronous=True)
+    q_read_addr = pyrtl.WireVector(q_table.addrwidth, 'q_read_addr')
     q_write_addr = pyrtl.WireVector(q_table.addrwidth, 'q_write_addr')
-    q_write_data = pyrtl.WireVector(q_table.bitwidth, 'q_write_data')
+    q_write_data = pyrtl.Register(q_table.bitwidth, 'q_write_data')
+    
     we = pyrtl.WireVector(1, 'we')
     q_table[q_write_addr] <<= pyrtl.MemBlock.EnabledWrite(q_write_data, enable=we)
+    q_read_data = q_table[q_read_addr]
 
     current_state = pyrtl.Register(state_bits, 'current_state_reg')
     chosen_action = pyrtl.Register(action_bits, 'chosen_action_reg')
+
+    # Registers to store fetched Q-values (pipelining)
+    q_val_regs = [pyrtl.Register(q_bits, f'q_val_reg_{i}') for i in range(actions)]
+    next_q_val_regs = [pyrtl.Register(q_bits, f'next_q_val_reg_{i}') for i in range(actions)]
 
     ALPHA_FP = pyrtl.Const(fixed_point_const(alpha, frac_bits), q_bits)
     GAMMA_FP = pyrtl.Const(fixed_point_const(gamma, frac_bits), q_bits)
     EPSILON_FP = pyrtl.Const(fixed_point_const(epsilon, frac_bits), q_bits)
 
     lfsr = pyrtl.Register(16, 'lfsr')
-    feedback = lfsr[0] ^ lfsr[2] ^ lfsr[3] ^ lfsr[5]
-    with pyrtl.ConditionalUpdate() as lfsr_logic:
-        with lfsr == 0: lfsr.next |= 1
-        with pyrtl.otherwise: lfsr.next |= pyrtl.concat(feedback, lfsr[16:1])
+    feedback = lfsr[15] ^ lfsr[14] ^ lfsr[13] ^ lfsr[11]
+    shifted_val = pyrtl.shift_left_logical(lfsr, 1) | feedback
+    lfsr.next <<= pyrtl.select(lfsr == 0, truecase=1, falsecase=shifted_val)
 
-    fsm_state = pyrtl.Register(3, 'fsm_state')
-    IDLE, FETCH_Q, CHOOSE_ACTION, AWAIT_ENV, FETCH_NEXT_Q, UPDATE, WRITE_BACK = [pyrtl.Const(i, 3) for i in range(7)]
-    we <<= fsm_state == WRITE_BACK
-
-    q_vals = [pyrtl.WireVector(q_bits, f'q_val_{i}') for i in range(actions)]
-    max_next_q = pyrtl.WireVector(q_bits, 'max_next_q')
+    # Expanded FSM to handle sequential memory reads
+    fsm_state = pyrtl.Register(4, 'fsm_state')
+    IDLE, \
+    FETCH_CURR_Q0, FETCH_CURR_Q1, FETCH_CURR_Q2, FETCH_CURR_Q3, \
+    CHOOSE_ACTION, AWAIT_ENV, \
+    FETCH_NEXT_Q0, FETCH_NEXT_Q1, FETCH_NEXT_Q2, FETCH_NEXT_Q3, \
+    UPDATE, WRITE_BACK = [pyrtl.Const(i, bitwidth=4) for i in range(13)]
     
-    with pyrtl.ConditionalUpdate() as FSM_LOGIC:
+    we <<= fsm_state == WRITE_BACK
+    episode_done <<= fsm_state == IDLE
+
+    # --- FSM Logic ---
+    with pyrtl.conditional_assignment:
         with fsm_state == IDLE:
+            q_read_addr |= 0
             with start_episode:
-                fsm_state.next |= FETCH_Q
+                fsm_state.next |= FETCH_CURR_Q0
                 current_state.next |= current_state_in
-        with fsm_state == FETCH_Q:
+            with pyrtl.otherwise:
+                fsm_state.next |= IDLE # Stay idle unless started
+        
+        # Sequentially fetch Q-values for the current state
+        with fsm_state == FETCH_CURR_Q0:
+            q_read_addr |= pyrtl.concat(current_state, pyrtl.Const(0, action_bits))
+            q_val_regs[0].next |= q_read_data
+            fsm_state.next |= FETCH_CURR_Q1
+        with fsm_state == FETCH_CURR_Q1:
+            q_read_addr |= pyrtl.concat(current_state, pyrtl.Const(1, action_bits))
+            q_val_regs[1].next |= q_read_data
+            fsm_state.next |= FETCH_CURR_Q2
+        with fsm_state == FETCH_CURR_Q2:
+            q_read_addr |= pyrtl.concat(current_state, pyrtl.Const(2, action_bits))
+            q_val_regs[2].next |= q_read_data
+            fsm_state.next |= FETCH_CURR_Q3
+        with fsm_state == FETCH_CURR_Q3:
+            q_read_addr |= pyrtl.concat(current_state, pyrtl.Const(3, action_bits))
+            q_val_regs[3].next |= q_read_data
             fsm_state.next |= CHOOSE_ACTION
+
         with fsm_state == CHOOSE_ACTION:
+            q_read_addr |= 0
             explore = lfsr < EPSILON_FP
-            random_action = lfsr[action_bits-1:0]
-            
-            max_q_val = pyrtl.WireVector(q_bits, 'max_q_val')
-            best_action = pyrtl.WireVector(action_bits, 'best_action')
-            
-            max_q_val <<= pyrtl.select(q_vals[0] > q_vals[1], q_vals[0], q_vals[1])
-            max_q_val <<= pyrtl.select(max_q_val > q_vals[2], max_q_val, q_vals[2])
-            max_q_val <<= pyrtl.select(max_q_val > q_vals[3], max_q_val, q_vals[3])
-            
-            best_action <<= pyrtl.select(q_vals[0] == max_q_val, pyrtl.Const(0, bitwidth=action_bits),
-                              pyrtl.select(q_vals[1] == max_q_val, pyrtl.Const(1, bitwidth=action_bits),
-                              pyrtl.select(q_vals[2] == max_q_val, pyrtl.Const(2, bitwidth=action_bits), 
-                                           pyrtl.Const(3, bitwidth=action_bits))))
+            random_action = lfsr & pyrtl.Const(3, bitwidth=lfsr.bitwidth)
+
+            max_q_val = pyrtl.mux(q_val_regs[0] > q_val_regs[1], q_val_regs[0], q_val_regs[1])
+            max_q_val = pyrtl.mux(max_q_val > q_val_regs[2], max_q_val, q_val_regs[2])
+            max_q_val = pyrtl.mux(max_q_val > q_val_regs[3], max_q_val, q_val_regs[3])
+
+            best_action = pyrtl.mux(q_val_regs[0] == max_q_val, pyrtl.Const(0),
+                                pyrtl.mux(q_val_regs[1] == max_q_val, pyrtl.Const(1),
+                                        pyrtl.mux(q_val_regs[2] == max_q_val, pyrtl.Const(2),
+                                                pyrtl.Const(3))))
             
             chosen_action.next |= pyrtl.select(explore, truecase=random_action, falsecase=best_action)
             fsm_state.next |= AWAIT_ENV
+
         with fsm_state == AWAIT_ENV:
-            fsm_state.next |= FETCH_NEXT_Q
-        with fsm_state == FETCH_NEXT_Q:
+            q_read_addr |= 0
+            # Hardware waits for the environment to provide the next state
+            fsm_state.next |= FETCH_NEXT_Q0
+
+        # Sequentially fetch Q-values for the next state
+        with fsm_state == FETCH_NEXT_Q0:
+            q_read_addr |= pyrtl.concat(next_state_in, pyrtl.Const(0, action_bits))
+            next_q_val_regs[0].next |= q_read_data
+            fsm_state.next |= FETCH_NEXT_Q1
+        with fsm_state == FETCH_NEXT_Q1:
+            q_read_addr |= pyrtl.concat(next_state_in, pyrtl.Const(1, action_bits))
+            next_q_val_regs[1].next |= q_read_data
+            fsm_state.next |= FETCH_NEXT_Q2
+        with fsm_state == FETCH_NEXT_Q2:
+            q_read_addr |= pyrtl.concat(next_state_in, pyrtl.Const(2, action_bits))
+            next_q_val_regs[2].next |= q_read_data
+            fsm_state.next |= FETCH_NEXT_Q3
+        with fsm_state == FETCH_NEXT_Q3:
+            q_read_addr |= pyrtl.concat(next_state_in, pyrtl.Const(3, action_bits))
+            next_q_val_regs[3].next |= q_read_data
             fsm_state.next |= UPDATE
+            
         with fsm_state == UPDATE:
-            old_q_val = q_vals[chosen_action]
-            term1 = (GAMMA_FP * max_next_q) >> frac_bits
+            q_read_addr |= 0
+            max_next_q = pyrtl.mux(next_q_val_regs[0] > next_q_val_regs[1], next_q_val_regs[0], next_q_val_regs[1])
+            max_next_q = pyrtl.mux(max_next_q > next_q_val_regs[2], max_next_q, next_q_val_regs[2])
+            max_next_q = pyrtl.mux(max_next_q > next_q_val_regs[3], max_next_q, next_q_val_regs[3])
+
+            old_q_val = pyrtl.mux(chosen_action, q_val_regs[3], q_val_regs[2], q_val_regs[1], q_val_regs[0])
+
+            term1_mult = GAMMA_FP * max_next_q
+            term1 = pyrtl.shift_right_arithmetic(term1_mult, frac_bits)
             term2 = reward_in + term1
             term3 = term2 - old_q_val
-            term4 = (ALPHA_FP * term3) >> frac_bits
+            term4_mult = ALPHA_FP * term3
+            term4 = pyrtl.shift_right_arithmetic(term4_mult, frac_bits)
+            
             new_q_val = old_q_val + term4
             q_write_data.next |= new_q_val
             fsm_state.next |= WRITE_BACK
-        with fsm_state == WRITE_BACK:
-            current_state.next |= next_state_in
-            with done_in: fsm_state.next |= IDLE
-            with pyrtl.otherwise: fsm_state.next |= FETCH_Q
 
+        with fsm_state == WRITE_BACK:
+            q_read_addr |= 0
+            q_write_addr |= pyrtl.concat(current_state, chosen_action)
+            with done_in:
+                fsm_state.next |= IDLE
+            with pyrtl.otherwise:
+                current_state.next |= next_state_in
+                fsm_state.next |= FETCH_CURR_Q0
+        
     action_out <<= chosen_action
     
     return {
         'start_episode': start_episode, 'current_state_in': current_state_in,
         'reward_in': reward_in, 'next_state_in': next_state_in, 'done_in': done_in,
-        'action_out': action_out, 'fsm_state': fsm_state, 'q_table': q_table, 
-        'q_vals': q_vals, 'max_next_q': max_next_q,
+        'action_out': action_out, 'fsm_state': fsm_state, 'episode_done': episode_done,
+        'AWAIT_ENV_STATE': AWAIT_ENV
     }
 
 # -------------------------------------------------------------------------
@@ -111,7 +179,7 @@ def create_frozenlake_accelerator(
 
 def run_software_q_learning(env, episodes, alpha, gamma, epsilon):
     """ Pure Python implementation of Q-learning for benchmarking. """
-    q_table = [[0.0] * env.grid_size * env.grid_size for _ in range(4)]
+    q_table = [[0.0] * (env.grid_size * env.grid_size) for _ in range(4)]
     
     for episode in range(episodes):
         state = env.reset()
@@ -119,15 +187,13 @@ def run_software_q_learning(env, episodes, alpha, gamma, epsilon):
         
         while not done:
             if random.uniform(0, 1) < epsilon:
-                action = random.randint(0, 3) # Explore
+                action = random.randint(0, 3)
             else:
-                # Exploit: find action with max Q-value
                 q_values_for_state = [q_table[a][state] for a in range(4)]
                 action = q_values_for_state.index(max(q_values_for_state))
 
             next_state, reward, done = env.step(state, action)
             
-            # Q-learning formula
             old_value = q_table[action][state]
             next_max = max([q_table[a][next_state] for a in range(4)])
             
@@ -172,49 +238,42 @@ def run_hardware_simulation(hw_design, env, episodes, frac_bits):
     """ Runs the PyRTL simulation and counts clock cycles. """
     sim = pyrtl.Simulation()
     clock_cycles = 0
+    AWAIT_ENV_STATE = hw_design['AWAIT_ENV_STATE']
 
     for episode in range(episodes):
         current_state = env.reset()
-        sim.step({'start_episode': 1, 'current_state_in': current_state, 'reward_in': 0, 'next_state_in': 0, 'done_in': 0})
+        inputs = {
+            'start_episode': 1,
+            'current_state_in': current_state,
+            'reward_in': 0,
+            'next_state_in': 0,
+            'done_in': 0
+        }
+        sim.step(inputs)
         clock_cycles += 1
         
-        for step in range(200):
-            sim.step({'start_episode': 0})
-            clock_cycles += 1
-            
+        # De-assert start signal after the first cycle
+        inputs['start_episode'] = 0
+
+        for step in range(500): # Increased max steps per episode
             fsm_state = sim.inspect(hw_design['fsm_state'])
-            if fsm_state == 1: # FETCH_Q
-                q_table_sim = sim.inspect_mem(hw_design['q_table'])
-                current_hw_state = sim.inspect(hw_design['current_state_in'])
-                for i in range(4):
-                    addr = (current_hw_state << 2) + i
-                    sim.wire_fast_update(hw_design['q_vals'][i], q_table_sim.get(addr, 0))
+
+            if fsm_state == AWAIT_ENV_STATE.val:
+                action = sim.inspect(hw_design['action_out'])
+                next_state, reward, done = env.step(current_state, action)
+                
+                # Update inputs with new values from the environment
+                inputs['reward_in'] = fixed_point_const(reward, frac_bits)
+                inputs['next_state_in'] = next_state
+                inputs['done_in'] = 1 if done else 0
+                
+                current_state = next_state
             
-            sim.step({})
-            clock_cycles += 1
-            action = sim.inspect(hw_design['action_out'])
-            
-            next_state, reward, done = env.step(current_state, action)
-            
-            sim.step({'reward_in': fixed_point_const(reward, frac_bits), 'next_state_in': next_state, 'done_in': 1 if done else 0})
+            sim.step(inputs)
             clock_cycles += 1
 
-            fsm_state = sim.inspect(hw_design['fsm_state'])
-            if fsm_state == 4: # FETCH_NEXT_Q
-                q_table_sim = sim.inspect_mem(hw_design['q_table'])
-                max_q = 0
-                for i in range(4):
-                    addr = (next_state << 2) + i
-                    max_q = max(max_q, q_table_sim.get(addr, 0))
-                sim.wire_fast_update(hw_design['max_next_q'], max_q)
-
-            sim.step({}) # UPDATE state
-            clock_cycles += 1
-            sim.step({}) # WRITE_BACK state
-            clock_cycles += 1
-
-            current_state = next_state
-            if done: break
+            if sim.inspect(hw_design['episode_done']):
+                break
             
     return clock_cycles
 
@@ -222,7 +281,7 @@ if __name__ == "__main__":
     # --- Benchmark Parameters ---
     GRID_SIZE = 10
     NUM_STATES = GRID_SIZE * GRID_SIZE
-    NUM_EPISODES = 5000  # Reduced for quicker benchmark run
+    NUM_EPISODES = 5000
     FRAC_BITS = 8
     ALPHA, GAMMA, EPSILON = 0.1, 0.9, 0.1
 
@@ -256,7 +315,5 @@ if __name__ == "__main__":
     print("\nAnalysis:")
     print("The hardware accelerator's performance is measured in clock cycles. Each cycle is extremely fast (e.g., at 500 MHz, one cycle is 2 nanoseconds).")
     print("The software version's performance depends on the CPU's speed and architecture, but requires many instructions for each Q-update.")
-    print("To get a theoretical speedup, you could estimate the number of CPU instructions for the software loop and compare it to the hardware cycle count.")
     print("This result clearly shows that the hardware architecture completes the task in a predictable number of cycles, representing a significant optimization.")
-
 
