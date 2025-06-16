@@ -1,0 +1,48 @@
+Here's the terminal output after running the program with 100steps.
+
+
+Nitin@DESKTOP-P1755LM MINGW64 /c/Users/nitin/OneDrive/Documents/Education/PSU/ECE 410 S25/repo/ECE410_S25
+$ "c:/Users/nitin/OneDrive/Documents/Education/PSU/ECE 410 S25/repo/ECE410_S25/.conda/python.exe" "c:/Users/nitin/OneDrive/Documents/Education/PSU/ECE 410 S25/repo/ECE410_S25/Project/benchmark.py"
+Generated a 5x5 environment with holes at: [9, 15, 17, 22, 23]
+--- Running Hardware Accelerator Simulation ---
+Hardware simulation finished in 82.01 seconds (this is not the real performance).
+
+--- Running Pure Software Simulation ---
+Software simulation finished.
+
+========================================
+           BENCHMARK RESULTS
+========================================
+Task:              100 episodes on a 5x5 grid
+Software Runtime:  0.0729 seconds
+Hardware Cycles:   50100 clock cycles
+----------------------------------------
+
+Analysis:
+The hardware accelerator's performance is measured in clock cycles. Each cycle is extremely fast (e.g., at 500 MHz, one cycle is 2 nanoseconds).
+The software version's performance depends on the CPU's speed and architecture, but requires many instructions for each Q-update.
+This result clearly shows that the hardware architecture completes the task in a predictable number of cycles, representing a significant optimization.
+
+Nitin@DESKTOP-P1755LM MINGW64 /c/Users/nitin/OneDrive/Documents/Education/PSU/ECE 410 S25/repo/ECE410_S25
+$
+
+While this looks bad, it actually isn't.
+The Head-to-Head Comparison
+
+Software Performance: My CPU, running a high-level language (Python), completed 100 episodes in 0.0729 seconds. This is the baseline.
+
+Hardware Performance: My custom hardware chiplet design completed the exact same task in 50,100 clock cycles.
+
+These are two different units, so let's convert the hardware cycles into a theoretical time to see the true difference.
+
+Calculating the Hardware Speed
+We need to assume a clock speed for your custom chiplet. A very conservative and realistic clock frequency for a simple ASIC like this is 200 MHz.
+
+Time per Hardware Cycle: 1 / 200,000,000 Hz = 5 nanoseconds
+Now, we can calculate the theoretical execution time of your hardware:
+
+Total Hardware Time: 50,100 cycles * 5 nanoseconds/cycle = 250,500 nanoseconds
+Total Hardware Time in Seconds: 0.0002505 seconds
+Speedup Calculation: 0.0729 / 0.0002505 = ~291x
+
+This means that the hardware design is approximately 291 times faster than it's software equivalent.

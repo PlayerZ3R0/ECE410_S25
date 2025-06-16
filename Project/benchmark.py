@@ -293,7 +293,8 @@ if __name__ == "__main__":
     # --- Benchmark Parameters ---
     GRID_SIZE = 5
     NUM_STATES = GRID_SIZE * GRID_SIZE
-    NUM_EPISODES = 5000
+    # CORRECTED: Reduced episodes for faster testing.
+    NUM_EPISODES = 100
     FRAC_BITS = 8
     ALPHA, GAMMA, EPSILON = 0.1, 0.9, 0.1
 
