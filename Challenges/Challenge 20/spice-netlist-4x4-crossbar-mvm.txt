@@ -1,0 +1,64 @@
+* SPICE Netlist for a 4x4 Resistive Crossbar
+* Demonstrates Matrix-Vector Multiplication (MVM)
+
+************************************************************************
+* 1. Circuit Definition
+************************************************************************
+
+* --- Voltage Sources (Input Vector V) ---
+* V(name) node+ node- value
+V1 V1 0 DC 0.5  ; Input Vector element 1 = 0.5V
+V2 V2 0 DC 1.0  ; Input Vector element 2 = 1.0V
+V3 V3 0 DC 0.2  ; Input Vector element 3 = 0.2V
+V4 V4 0 DC 1.5  ; Input Vector element 4 = 1.5V
+
+* --- Resistor Matrix (Weight Matrix G) ---
+* Each resistor R_ij connects Word Line i (node Vi) to Bit Line j (node I_j)
+* The conductance G = 1/R. We use kOhms for convenience.
+
+* Column 1 (Bit Line I1)
+R11 V1 I1 1.00k  ; G11 = 1 mS
+R21 V2 I1 0.20k  ; G21 = 5 mS
+R31 V3 I1 0.111k ; G31 = 9 mS
+R41 V4 I1 0.077k ; G41 = 13 mS
+
+* Column 2 (Bit Line I2)
+R12 V1 I2 0.50k  ; G12 = 2 mS
+R22 V2 I2 0.167k ; G22 = 6 mS
+R32 V3 I2 0.100k ; G32 = 10 mS
+R42 V4 I2 0.071k ; G42 = 14 mS
+
+* Column 3 (Bit Line I3)
+R13 V1 I3 0.333k ; G13 = 3 mS
+R23 V2 I3 0.143k ; G23 = 7 mS
+R33 V3 I3 0.091k ; G33 = 11 mS
+R43 V4 I3 0.067k ; G43 = 15 mS
+
+* Column 4 (Bit Line I4)
+R14 V1 I4 0.250k ; G14 = 4 mS
+R24 V2 I4 0.125k ; G24 = 8 mS
+R34 V3 I4 0.083k ; G34 = 12 mS
+R44 V4 I4 0.063k ; G44 = 16 mS
+
+* --- Output Measurement ---
+* The Bit Lines are held at virtual ground (0V). We use 0V sources
+* to measure the current flowing into them (Kirchhoff's Current Law).
+* This current is the sum of currents from each word line in that column.
+V_I1 I1 0 DC 0
+V_I2 I2 0 DC 0
+V_I3 I3 0 DC 0
+V_I4 I4 0 DC 0
+
+
+************************************************************************
+* 2. Simulation Commands
+************************************************************************
+
+* Use Operating Point (.op) analysis for DC values
+.op
+
+* Print the currents flowing through the 0V sources.
+* These are our output vector elements.
+.print op I(V_I1) I(V_I2) I(V_I3) I(V_I4)
+
+.end
