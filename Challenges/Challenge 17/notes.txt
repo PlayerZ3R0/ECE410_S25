@@ -1,0 +1,33 @@
+1. Systolic Array Design for Bubble Sort
+A systolic array for sorting an array of N elements using a Bubble Sort-like algorithm can be designed as a one-dimensional (linear) array of N processing elements (PEs). Each PE is a simple comparator-swapper.
+
+Dimension: The array needs to be 1D with N processors.
+
+How it Works (Data Flow):
+
+The core idea is to have two streams of data flowing through the linear array of PEs in opposite directions.
+
+PE Function: Each PE has two inputs (one from the left, one from the right) and two outputs. In each clock cycle, a PE performs a simple compare-and-swap operation:
+
+It receives a value from the left (in_A) and a value from the right (in_B).
+It compares them.
+It sends the smaller value to the right (out_B).
+It sends the larger value to the left (out_A).
+Data Streams:
+
+Forward Stream (Left to Right): The unsorted numbers are fed into the leftmost PE, one number per clock cycle. These numbers flow to the right.
+Backward Stream (Right to Left): A stream of "infinity" values (or the largest possible number) is fed into the rightmost PE. These act as placeholders.
+The Sorting Process:
+
+As the unsorted numbers move from left to right, they encounter larger numbers moving from right to left (initially infinity, then the actual larger numbers from the input stream).
+At each PE, a comparison happens. If the number from the left is larger than the number from the right, they swap places. The larger number "bubbles up" to the left, and the smaller number continues its journey to the right.
+After 2N clock cycles, the sorted numbers will emerge from the right-hand outputs of all PEs, with the smallest at PE #1 and the largest at PE #N. The data has been sorted as it rhythmically "pumped" through the array.
+Here's a diagram illustrating the flow for N=4:
+
+Clock Cycle ->
+      PE1      PE2      PE3      PE4
+In -> [d4] -> [d3] -> [d2] -> [d1] -> Sorted Out
+<-- [inf] <-- [inf] <-- [inf] <-- [inf] <-- In (placeholders)
+
+
+The key is that after the pipeline is full, a sorted element is produced every cycle.

@@ -1,0 +1,21 @@
+--- Running Systolic Array Sort Benchmark ---
+Input Size     Execution Time (s)  
+-----------------------------------
+10             0.000031
+100            0.001683
+1000           0.158434
+5000           4.021579
+10000          16.345811
+
+--------------------------------------------------------------------------------------
+Visualization:
+
+The visualize_results function will generate a bar chart similar to this, showing the execution time for each problem size.
+
+Analysis and Observations:
+
+- Quadratic Complexity (O(N²)): The most crucial observation is that the execution time grows quadratically with the input size N. The simulation runs for 2N cycles, and in each cycle, it iterates through N processors. This gives the software simulation a time complexity of O(N²).
+
+- Hardware vs. Software: This quadratic performance is a feature of the software simulation, not the hardware implementation. In actual hardware, all N processors would operate simultaneously in each clock cycle. Therefore, the hardware's execution time would be determined solely by the number of cycles, which is 2N. This means the true hardware implementation has a linear time complexity of O(N).
+
+- The Power of Pipelining: The systolic array's real power comes from pipelining. Once the first sorted element emerges after N cycles, a new sorted element is produced every single clock cycle thereafter. This makes it incredibly efficient for streaming data applications where continuous sorting is required.
