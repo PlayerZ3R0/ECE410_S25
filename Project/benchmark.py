@@ -293,7 +293,7 @@ if __name__ == "__main__":
     # --- Benchmark Parameters ---
     GRID_SIZE = 10
     NUM_STATES = GRID_SIZE * GRID_SIZE
-    NUM_EPISODES = 100
+    NUM_EPISODES = 250
     FRAC_BITS = 8
     ALPHA, GAMMA, EPSILON = 0.1, 0.9, 0.1
     ASIC_FREQ_MHZ = 200 # Conservative frequency for a simple custom ASIC
