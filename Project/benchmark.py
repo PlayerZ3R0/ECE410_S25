@@ -291,7 +291,7 @@ def run_hardware_simulation(hw_design, env, episodes, frac_bits):
 
 if __name__ == "__main__":
     # --- Benchmark Parameters ---
-    GRID_SIZE = 5
+    GRID_SIZE = 10
     NUM_STATES = GRID_SIZE * GRID_SIZE
     NUM_EPISODES = 100
     FRAC_BITS = 8
