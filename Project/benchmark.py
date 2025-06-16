@@ -293,10 +293,10 @@ if __name__ == "__main__":
     # --- Benchmark Parameters ---
     GRID_SIZE = 5
     NUM_STATES = GRID_SIZE * GRID_SIZE
-    # CORRECTED: Reduced episodes for faster testing.
     NUM_EPISODES = 100
     FRAC_BITS = 8
     ALPHA, GAMMA, EPSILON = 0.1, 0.9, 0.1
+    ASIC_FREQ_MHZ = 200 # Conservative frequency for a simple custom ASIC
 
     env = FrozenLakeEnv(grid_size=GRID_SIZE)
 
@@ -317,16 +317,23 @@ if __name__ == "__main__":
     sw_time = time.time() - sw_start_time
     print(f"Software simulation finished.")
 
-    # --- Print Results ---
+    # --- Calculate and Print Results ---
+    hw_time_sec = total_hw_cycles / (ASIC_FREQ_MHZ * 1_000_000)
+    speedup_factor = sw_time / hw_time_sec if hw_time_sec > 0 else float('inf')
+
     print("\n" + "="*40)
     print("           BENCHMARK RESULTS")
     print("="*40)
     print(f"Task:              {NUM_EPISODES} episodes on a {GRID_SIZE}x{GRID_SIZE} grid")
     print(f"Software Runtime:  {sw_time:.4f} seconds")
     print(f"Hardware Cycles:   {total_hw_cycles} clock cycles")
+    print(f"Assumed ASIC Freq: {ASIC_FREQ_MHZ} MHz")
+    print(f"Theoretical HW Time: {hw_time_sec:.6f} seconds")
     print("-"*40)
+    print(f"CALCULATED SPEEDUP: {speedup_factor:.2f}x")
+    print("="*40)
     print("\nAnalysis:")
-    print("The hardware accelerator's performance is measured in clock cycles. Each cycle is extremely fast (e.g., at 500 MHz, one cycle is 2 nanoseconds).")
+    print("The hardware accelerator's performance is measured in clock cycles. Each cycle is extremely fast.")
     print("The software version's performance depends on the CPU's speed and architecture, but requires many instructions for each Q-update.")
     print("This result clearly shows that the hardware architecture completes the task in a predictable number of cycles, representing a significant optimization.")
 
