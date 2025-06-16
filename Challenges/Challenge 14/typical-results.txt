@@ -1,0 +1,24 @@
+--- Running Sequential CPU Implementation ---
+Calculating the first 1048576 Fibonacci numbers...
+CPU Execution Time: 3.98 ms
+
+--- Running Parallel CUDA Implementation ---
+Calculating the first 1048576 Fibonacci numbers...
+CUDA Kernel Execution Time: 2154.51 ms
+
+
+Observation: The CUDA implementation is dramatically slower—by a factor of over 500x!
+
+Why does this happen?
+
+1. Computational Redundancy: This is the primary culprit. To calculate F(1,000,000), the GPU thread assigned to that index must perform nearly a million addition operations. The thread for F(999,999) does almost the same amount of work. The total number of calculations performed by the GPU across all threads is enormous (approximately N²/2 operations), whereas the simple sequential version performs only N operations.
+
+2. Algorithm vs. Implementation: The problem lies not in the CUDA implementation itself, but in the choice of algorithm. We forced a sequential algorithm into a parallel execution model by massively increasing the total workload.
+
+3. GPU Overhead: While not the main factor here, there is always a small overhead for launching a kernel. However, in this case, the algorithmic inefficiency is so overwhelming that the launch overhead is negligible in comparison.
+
+Conclusion:
+
+The algorithm's data dependency structure is the ultimate arbiter of whether a GPU can provide a speed-up.
+
+Simply throwing a problem at a GPU does not guarantee better performance. A developer must first analyze the algorithm for data dependencies. If a problem is inherently sequential, like the Fibonacci sequence, a simple and efficient CPU implementation will almost always outperform a brute-force parallel approach. The GPU is a powerful tool, but only for the right kind of job—one that can be broken down into many independent, parallel tasks.
