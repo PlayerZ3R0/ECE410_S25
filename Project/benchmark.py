@@ -210,13 +210,25 @@ def run_software_q_learning(env, episodes, alpha, gamma, epsilon):
 # -------------------------------------------------------------------------
 
 class FrozenLakeEnv:
-    """A software model of the 10x10 FrozenLake environment."""
-    def __init__(self, grid_size=10):
+    """A software model of the 5x5 FrozenLake environment with random holes."""
+    def __init__(self, grid_size=5):
         self.grid_size = grid_size
         self.states = self.grid_size * self.grid_size
-        self.holes = {13, 21, 28, 33, 45, 51, 59, 62, 74, 88, 92}
         self.goal = self.states - 1
+        
+        # Calculate the number of holes (20% of the grid)
+        num_holes = int(self.states * 0.20)
+        
+        # Generate a list of all possible locations for holes
+        # Exclude the start (0) and goal states
+        possible_hole_locations = list(range(1, self.goal))
+        
+        # Randomly select the hole locations
+        self.holes = set(random.sample(possible_hole_locations, num_holes))
+        
         self.state = 0
+        print(f"Generated a {grid_size}x{grid_size} environment with holes at: {sorted(list(self.holes))}")
+
 
     def reset(self):
         self.state = 0
@@ -279,7 +291,7 @@ def run_hardware_simulation(hw_design, env, episodes, frac_bits):
 
 if __name__ == "__main__":
     # --- Benchmark Parameters ---
-    GRID_SIZE = 10
+    GRID_SIZE = 5
     NUM_STATES = GRID_SIZE * GRID_SIZE
     NUM_EPISODES = 5000
     FRAC_BITS = 8
