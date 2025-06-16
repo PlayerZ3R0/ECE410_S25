@@ -1,0 +1,13 @@
+This visualization reveals several key insights:
+
+1.
+Memory Transfer Dominates at All Sizes: The blue bars (Total Time) are significantly taller than the royal blue bars (Kernel Time) across all problem sizes. This shows that the majority of the wall-clock time is spent on overhead, primarily moving data to and from the GPU, not on the computation itself.
+
+2.
+Linear Growth on a Log Scale: Both total time and kernel time appear to grow linearly on this logarithmic plot. This indicates that the execution time is scaling exponentially with the problem size, which is expected since we are doubling the amount of data (N) at each step.
+
+3.
+The "Cost of Entry" for GPUs: For the smallest problem size (2^15), the kernel computation is incredibly fast (~0.007 ms), but the total time is over 25 times longer (~0.186 ms). This highlights the high fixed overhead of using a GPU. If your problem is too small, the cost of data transfer will completely negate the benefit of the GPU's fast computation.
+
+4.
+Scaling Matters: As the problem size increases, the kernel time becomes a more significant fraction of the total time. At N=2^15, kernel time is only ~4% of the total. By N=2^25, it has grown to ~5.2% of the total. While still a small fraction, this trend shows that for even larger and more computationally intensive problems (beyond SAXPY), the kernel execution time will eventually become the dominant factor. This is the regime where GPUs truly excel and provide massive speed-ups.

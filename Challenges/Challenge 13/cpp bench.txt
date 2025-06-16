@@ -1,0 +1,6 @@
+The CUDA C++ Benchmarking Code
+
+This program is a modified version of the standard SAXPY example. It's designed to loop through various large problem sizes, from N = 2^15 to N = 2^25. For each size, it meticulously times two critical components using cudaEvent_t, as hinted in the challenge:
+
+Kernel Execution Time: The actual time the GPU spends running the saxpy computation.
+Total Execution Time: The end-to-end time, including allocating memory on the GPU, transferring data from CPU to GPU, kernel execution, and transferring the results back.
