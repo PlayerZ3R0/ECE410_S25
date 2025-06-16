@@ -1,0 +1,14 @@
+--- Starting Training ---
+Epoch 20/200, Error: 1.5511
+Epoch 40/200, Error: 1.3953
+Epoch 60/200, Error: 1.1952
+Epoch 80/200, Error: 1.0515
+Epoch 100/200, Error: 0.9452
+Epoch 120/200, Error: 0.8628
+Epoch 140/200, Error: 0.7967
+Epoch 160/200, Error: 0.7422
+Epoch 180/200, Error: 0.6964
+Epoch 200/200, Error: 0.6572
+--- Training Complete ---
+Final Weights: [-2.6098997  -2.58934992]
+Final Bias: 3.9905
